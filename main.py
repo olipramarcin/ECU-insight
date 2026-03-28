@@ -1,27 +1,43 @@
 import tkinter as tk
+from threading import Thread
 from obd_reader import auto_connect
 from logger import log_data
 import obd
 
-# Połączenie OBD
-connection = auto_connect()
+connection = None
 
 # GUI
 root = tk.Tk()
-root.title("Engine Insight GUI")
+root.title("Engine Insight")
+root.geometry("300x250")
 
-# Etykiety
 rpm_label = tk.Label(root, text="RPM: --", font=("Arial", 14))
 rpm_label.pack(pady=5)
+
 speed_label = tk.Label(root, text="Speed: --", font=("Arial", 14))
 speed_label.pack(pady=5)
+
 coolant_label = tk.Label(root, text="Coolant Temp: --", font=("Arial", 14))
 coolant_label.pack(pady=5)
+
 throttle_label = tk.Label(root, text="Throttle Pos: --", font=("Arial", 14))
 throttle_label.pack(pady=5)
-status_label = tk.Label(root, text="Status: Łączenie...", font=("Arial", 12))
-status_label.pack(pady=5)
 
+status_label = tk.Label(root, text="Status: Uruchamianie...", font=("Arial", 12))
+status_label.pack(pady=10)
+
+# Łączenie w tle 
+def connect_obd():
+    global connection
+    status_label.config(text="Status: Łączenie z OBD...")
+    connection = auto_connect()
+    
+    if connection:
+        status_label.config(text="Status: Połączono")
+    else:
+        status_label.config(text="Status: Brak połączenia")
+
+# Aktualizacja danych
 def update_data():
     if connection:
         rpm = connection.query(obd.commands.RPM)
@@ -34,18 +50,17 @@ def update_data():
         coolant_val = coolant.value if not coolant.is_null() else "No response"
         throttle_val = throttle.value if not throttle.is_null() else "No response"
 
-        # Aktualizacja GUI
         rpm_label.config(text=f"RPM: {rpm_val}")
         speed_label.config(text=f"Speed: {speed_val}")
         coolant_label.config(text=f"Coolant Temp: {coolant_val}")
         throttle_label.config(text=f"Throttle Pos: {throttle_val}")
-        status_label.config(text="Status: Połączono")
 
         log_data(rpm_val, speed_val, coolant_val, throttle_val)
-    else:
-        status_label.config(text="Status: Brak połączenia z ECU")
 
     root.after(1000, update_data)
 
+# Start
+Thread(target=connect_obd, daemon=True).start()
 update_data()
+
 root.mainloop()
