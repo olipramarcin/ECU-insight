@@ -1,40 +1,51 @@
+import tkinter as tk
+from obd_reader import auto_connect
+from logger import log_data
 import obd
-import time
-from obd_reader import connect, get_data
-from logger import log_to_file
 
-connection = connect()
+# Połączenie OBD
+connection = auto_connect()
 
-if connection is None:
-    print("Kabel OBD nie jest podlaczony.")
-    exit()
+# GUI
+root = tk.Tk()
+root.title("Engine Insight GUI")
 
-print("Polaczono z OBD")
+# Etykiety
+rpm_label = tk.Label(root, text="RPM: --", font=("Arial", 14))
+rpm_label.pack(pady=5)
+speed_label = tk.Label(root, text="Speed: --", font=("Arial", 14))
+speed_label.pack(pady=5)
+coolant_label = tk.Label(root, text="Coolant Temp: --", font=("Arial", 14))
+coolant_label.pack(pady=5)
+throttle_label = tk.Label(root, text="Throttle Pos: --", font=("Arial", 14))
+throttle_label.pack(pady=5)
+status_label = tk.Label(root, text="Status: Łączenie...", font=("Arial", 12))
+status_label.pack(pady=5)
 
-commands = {
-    "RPM": obd.commands.RPM,
-    "Speed": obd.commands.SPEED,
-    "Temperature": obd.commands.COOLANT_TEMP,
-    "Throttle": obd.commands.THROTTLE_POS
-}
+def update_data():
+    if connection:
+        rpm = connection.query(obd.commands.RPM)
+        speed = connection.query(obd.commands.SPEED)
+        coolant = connection.query(obd.commands.COOLANT_TEMP)
+        throttle = connection.query(obd.commands.THROTTLE_POS)
 
-while True:
-    output = []
+        rpm_val = rpm.value if not rpm.is_null() else "No response"
+        speed_val = speed.value if not speed.is_null() else "No response"
+        coolant_val = coolant.value if not coolant.is_null() else "No response"
+        throttle_val = throttle.value if not throttle.is_null() else "No response"
 
-    for name, cmd in commands.items():
-        value = get_data(connection, cmd)
+        # Aktualizacja GUI
+        rpm_label.config(text=f"RPM: {rpm_val}")
+        speed_label.config(text=f"Speed: {speed_val}")
+        coolant_label.config(text=f"Coolant Temp: {coolant_val}")
+        throttle_label.config(text=f"Throttle Pos: {throttle_val}")
+        status_label.config(text="Status: Połączono")
 
-        if value == "NO_RESPONSE":
-            text = f"{name}: no response"
-        elif value == "NO_CONNECTION":
-            text = f"{name}: brak polaczenia"
-        else:
-            text = f"{name}: {value}"
+        log_data(rpm_val, speed_val, coolant_val, throttle_val)
+    else:
+        status_label.config(text="Status: Brak połączenia z ECU")
 
-        print(text)
-        output.append(text)
+    root.after(1000, update_data)
 
-    print("------------")
-    log_to_file(" | ".join(output))
-
-    time.sleep(1)
+update_data()
+root.mainloop()

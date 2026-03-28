@@ -1,7 +1,7 @@
 import obd
 import serial.tools.list_ports
 
-def connect():
+def auto_connect():
     print("Proba polaczenia sie z OBD...")
 
     ports = serial.tools.list_ports.comports()
