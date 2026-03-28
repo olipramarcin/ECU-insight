@@ -1,26 +1,23 @@
 import obd
+import serial.tools.list_ports
 
 def connect():
     print("Proba polaczenia sie z OBD...")
-    
-    connection = obd.OBD("COM3", fast=False, timeout=2)
 
-    print("Status", connection.status())
+    ports = serial.tools.list_ports.comports()
+    print("Wykrywam porty OBD")
 
-    if connection.status() == obd.OBDStatus.NOT_CONNECTED:
-        print("Brak polaczenia z OBD")
-        return None
-
-    print("Polaczono z OBD. Sprawdzam ECU")
-
-    test = connection.query(obd.commands.SPEED)
-
-    if test.is_null():
-        print("ECU nie odpowiada")
-        return None
-
-    print("ECU odpowiada")    
-    return connection
+    for port in ports:
+        print(f"Proba: {port.device} ({port.description})")
+        try:
+            connection = obd.OBD(port.device, fast=False, timeout=2)
+            if connection.status() == obd.OBDStatus.CAR_CONNECTED:
+                print(f"Polaczono z ECU na {port.device}")
+                return connection
+        except:
+            continue
+    print("Nie znaleziono dzialajacego portu.")
+    return None
 
 def get_data(connection, cmd):
     if connection is None:
