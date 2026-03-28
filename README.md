@@ -20,7 +20,8 @@ Program do odczytu podstawowych parametrow silnika przez OBD-II.
  ```bash
  git clone <repozytorium>
  cd <folder_projektu>
- pip install -r requirements.txt```
+ pip install -r requirements.txt
+ ```
 
  ## - Uruchomienie -
 
